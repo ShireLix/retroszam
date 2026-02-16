@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>ARCADE - Order The Numbers</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+
+.stars {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 30%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.star {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: white;
+    border-radius: 50%;
+    opacity: 0;
+    animation: twinkle linear infinite;
+}
+
+@keyframes twinkle {
+    0% {opacity:0;}
+    50% {opacity:1;}
+    100% {opacity:0;}
+}
+
+
+body{
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-family:'Orbitron', sans-serif;
+    background: radial-gradient(circle at center, #3a0ca3 0%, #0f0524 70%);
+    overflow:hidden;
+    color:white;
+}
+
+/* ✨ CSILLOGÓ RÉSZECskék */
+body::after{
+    content:"";
+    position:absolute;
+    width:300%;
+    height:300%;
+    background-image:
+        radial-gradient(white 1px, transparent 1px),
+        radial-gradient(#ff00cc 1px, transparent 1px),
+        radial-gradient(#00ffff 1px, transparent 1px);
+    background-size: 120px 120px, 180px 180px, 250px 250px;
+    animation: sparkleMove 60s linear infinite;
+    opacity:0.15;
+}
+#card {
+    position: relative; /* szükséges a backButton abszolút pozícionálásához */
+    max-width: 1200px;
+    width: 100%;
+}
+
+/* BACK BUTTON */
+#backButton{
+    position:absolute;
+    top:15px;
+    right:15px;
+    padding:5px 10px;
+    font-size:18px;
+    border:2px solid #ff00cc;
+    background:transparent;
+    color:white;
+    cursor:pointer;
+    border-radius:8px;
+    z-index:3;
+    transition:0.3s;
+}
+
+#backButton:hover{
+    background:#ff00cc;
+    box-shadow:0 0 20px #ff00cc;
+}
+
+body::before{
+    content:"";
+    position:absolute;
+    bottom:0;
+    width:100%;
+    height:70%; /* nagyobb, hogy jobban világítson */
+    background:
+        radial-gradient(circle at center, #ffdd55 25%, transparent 70%), /* retro nap */
+        linear-gradient(to top, rgba(255,128,0,0.5), transparent 70%),
+        repeating-linear-gradient(to right, rgba(255,0,255,0.3) 0 2px, transparent 2px 60px),
+        repeating-linear-gradient(to top, rgba(0,255,255,0.3) 0 2px, transparent 2px 60px);
+    transform: perspective(400px) rotateX(60deg);
+    transform-origin:bottom;
+    animation: gridMove 10s linear infinite;
+    z-index:0;
+}
+
+/* GRID ANIMÁCIÓ */
+@keyframes gridMove{
+    from{background-position:0 0,0 0,0 0,0 0;}
+    to{background-position:0 0,0 0,60px 60px,60px 60px;}
+}
+
+
+/* 🎴 CARD */
+.card{
+    padding:40px;
+    border-radius:25px;
+    background:rgba(0,0,0,0.5); /* átlátszóbb */
+    border:2px solid #ff00cc;
+    box-shadow:
+        0 0 30px #ff00cc,
+        0 0 80px rgba(255,0,255,0.5);
+    text-align:center;
+    z-index:2;
+    width: fit-content;
+    max-width: 95vw;
+    transition:0.4s ease;
+}
+
+#midGlow {
+    position:absolute;
+    top:50%;
+    left:50%;
+    width:600px;
+    height:300px;
+    transform:translate(-50%,-50%);
+    background: radial-gradient(circle, rgba(255,128,255,0.1) 0%, transparent 70%);
+    filter: blur(100px);
+    animation: floatGlow 8s ease-in-out infinite alternate;
+    z-index:1;
+}
+
+@keyframes floatGlow{
+    0%{transform:translate(-50%,-50%) scale(1);}
+    50%{transform:translate(-50%,-48%) scale(1.05);}
+    100%{transform:translate(-50%,-50%) scale(1);}
+}
+
+/* Főmenü nagyobb, könnyű mód szélesítve */
+#menu .card button:first-child {
+    width: 180px; /* szélesebb gomb a könnyű módhoz */
+}
+
+/* CÍM */
+h1{
+    font-size:50px;
+    margin-bottom:30px;
+    background:linear-gradient(90deg,#ff00cc,#00ffff,#ff00cc);
+    background-size:200% auto;
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    text-shadow:0 0 25px rgba(255,0,255,0.9);
+    animation: shimmer 4s linear infinite;
+}
+
+/* GOMBOK */
+button{
+    padding:12px 30px;
+    margin:10px;
+    border:2px solid #ff00cc;
+    background:transparent;
+    color:white;
+    cursor:pointer;
+    transition:0.3s;
+    font-size:15px;
+    letter-spacing:1px;
+}
+
+button:hover{
+    background:#ff00cc;
+    box-shadow:0 0 20px #ff00cc;
+}
+
+button:disabled{opacity:0.4;cursor:default;}
+
+#currentNumber{
+    font-size:55px;
+    margin:20px 0;
+    color:#00ffff;
+    text-shadow:
+        0 0 15px #00ffff,
+        0 0 30px #00ffff;
+    animation:pulse 1.2s infinite alternate;
+}
+
+.board{
+    display:grid;
+    gap:14px;   /* több hely a mezők között */
+    margin-top:35px;
+    margin-bottom:25px;
+    justify-content:center;
+}
+
+.cell{
+    width:60px;
+    height:60px;
+    border:2px solid #00ffff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.cell:hover{
+    background:rgba(0,255,255,0.25);
+    box-shadow:0 0 15px #00ffff;
+}
+
+#backButton:hover{
+    background:#ff00cc;
+    box-shadow:0 0 20px #ff00cc;
+}
+
+
+.filled{
+    background:rgba(255,0,204,0.3);
+    border-color:#ff00cc;
+    box-shadow:0 0 20px #ff00cc;
+    cursor:default;
+}
+
+.hidden{display:none;}
+
+#message{
+    margin-top:30px;
+    margin-bottom:20px;
+    font-size:24px;
+    min-height:40px;
+    letter-spacing:2px;
+}
+
+/* Győzelem */
+.win{
+    color:#00ff88;
+    text-shadow:
+        0 0 10px #00ff88,
+        0 0 25px #00ff88,
+        0 0 40px #00ff88;
+}
+
+/* Vereség */
+.lose{
+    color:#ff0044;
+    text-shadow:
+        0 0 10px #ff0044,
+        0 0 25px #ff0044,
+        0 0 40px #ff0044;
+}
+
+/* ✨ Animációk */
+@keyframes pulse{
+    from{transform:scale(1);}
+    to{transform:scale(1.07);}
+}
+
+@keyframes shimmer{
+    0%{background-position:0% center;}
+    100%{background-position:200% center;}
+}
+
+@keyframes sparkleMove{
+    from{transform:translateY(0);}
+    to{transform:translateY(-500px);}
+}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="card" id="card">
+
+<div class="card" id="card">
+
+<div id="menu">
+    <h1>RENDEZD SORBA!</h1>
+    <button onclick="startGame(5)"><strong>KÖNNYŰ (5)</strong></button>
+    <button onclick="startGame(10)"><strong>KÖZEPES (10)</strong></button>
+    <button onclick="startGame(15)"><strong>NEHÉZ (15)</strong></button>
+</div>
+
+<div id="game" class="hidden">
+    <h1>RENDEZDD SORBA</h1>
+
+    <!-- Vissza gomb -->
+    <button id="backButton" onclick="goToMenu()" title="Vissza">&#x2190;</button>
+
+    <div id="currentNumber">000</div>
+    <button id="skipButton" onclick="skipNumber()">REROLL</button>
+    <div id="skipInfo">SKIP: 3</div>
+    <div class="board" id="board"></div>
+    <div id="message"></div>
+
+    <div id="endButtons" class="hidden">
+        <button onclick="restartSameMode()">ÚJRA</button>
+        <button onclick="goToMenu()">MENU</button>
+    </div>
+</div>
+
+</div>
+
+<script>
+let board=[];
+let currentNumber;
+let gameOver=false;
+let size=10;
+let skipsLeft=3;
+
+const boardEl=document.getElementById("board");
+const menu=document.getElementById("menu");
+const game=document.getElementById("game");
+const currentNumberEl=document.getElementById("currentNumber");
+const messageEl=document.getElementById("message");
+const skipInfo=document.getElementById("skipInfo");
+const skipButton=document.getElementById("skipButton");
+const endButtons=document.getElementById("endButtons");
+const starsEl = document.getElementById('stars');
+
+for(let i=0;i<50;i++){
+    const star = document.createElement('div');
+    star.classList.add('star');
+    star.style.left=Math.random()*100+"%";
+    star.style.top=Math.random()*100+"%";
+    star.style.animationDuration=(Math.random()*3+2)+"s";
+    star.style.animationDelay=Math.random()*5+"s";
+    starsEl.appendChild(star);
+}
+
+
+function generateNumber(){
+    return Math.floor(Math.random()*999)+1;
+}
+function pad(n){return n.toString().padStart(3,"0");}
+
+function startGame(s){
+    size=s;
+    board=new Array(size).fill(null);
+    gameOver=false;
+    skipsLeft=3;
+
+    boardEl.innerHTML="";
+
+    boardEl.style.gridTemplateColumns=`repeat(${size}, 60px)`;
+
+    for(let i=0;i<size;i++){
+        const cell=document.createElement("div");
+        cell.classList.add("cell");
+        cell.dataset.index=i;
+        cell.onclick=placeNumber;
+        boardEl.appendChild(cell);
+    }
+
+    menu.classList.add("hidden");
+    game.classList.remove("hidden");
+    messageEl.textContent="";
+    endButtons.classList.add("hidden");
+    skipButton.disabled=false;
+
+    updateSkip();
+    currentNumber=generateNumber();
+    currentNumberEl.textContent=pad(currentNumber);
+
+    // EASY MODE osztály hozzáadása
+    if(size === 5){
+        game.classList.add("easyMode");
+    } else {
+        game.classList.remove("easyMode");
+    }
+}
+
+function placeNumber(e){
+    if(gameOver)return;
+    const i=parseInt(e.target.dataset.index);
+    if(board[i]!==null)return;
+
+    for(let j=0;j<i;j++)
+        if(board[j]!==null && board[j]>=currentNumber)
+            return endGame(false);
+
+    for(let j=i+1;j<size;j++)
+        if(board[j]!==null && board[j]<=currentNumber)
+            return endGame(false);
+
+    board[i]=currentNumber;
+    e.target.textContent=pad(currentNumber);
+    e.target.classList.add("filled");
+
+    if(board.every(x=>x!==null))
+        return endGame(true);
+
+    currentNumber=generateNumber();
+    currentNumberEl.textContent=pad(currentNumber);
+}
+
+function skipNumber(){
+    if(skipsLeft<=0 || gameOver)return;
+    skipsLeft--;
+    updateSkip();
+    currentNumber=generateNumber();
+    currentNumberEl.textContent=pad(currentNumber);
+}
+
+function updateSkip(){
+    skipInfo.textContent="Skips left: "+skipsLeft;
+    if(skipsLeft<=0)skipButton.disabled=true;
+}
+
+function endGame(win){
+    gameOver=true;
+
+    messageEl.classList.remove("win","lose");
+
+    if(win){
+        messageEl.textContent="YOU WIN!";
+        messageEl.classList.add("win");
+    } else {
+        messageEl.textContent="GAME OVER";
+        messageEl.classList.add("lose");
+    }
+
+    endButtons.classList.remove("hidden");
+}
+
+function restartSameMode(){startGame(size);}
+function goToMenu(){
+    game.classList.add("hidden");
+    menu.classList.remove("hidden");
+}
+</script>
+
+</body>
+</html>
