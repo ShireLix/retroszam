@@ -290,7 +290,7 @@ button:disabled{opacity:0.4;cursor:default;}
 </div>
 
 <div id="game" class="hidden">
-    <h1>RENDEZD SORBA!</h1>
+    <h1>RENDEZDD SORBA</h1>
 
     <!-- Vissza gomb -->
     <button id="backButton" onclick="goToMenu()" title="Vissza">&#x2190;</button>
@@ -338,7 +338,16 @@ for(let i=0;i<50;i++){
 
 
 function generateNumber(){
-    return Math.floor(Math.random()*999)+1;
+    // Ensure we don't generate a number that's already placed on the board
+    const usedCount = board.filter(x => x !== null).length;
+    if(usedCount >= 999) return null; // all possible numbers used (very unlikely)
+    let n, attempts = 0;
+    do{
+        n = Math.floor(Math.random()*999)+1;
+        attempts++;
+    } while(board.includes(n) && attempts < 10000);
+    if(board.includes(n)) return null;
+    return n;
 }
 function pad(n){return n.toString().padStart(3,"0");}
 
@@ -368,6 +377,7 @@ function startGame(s){
 
     updateSkip();
     currentNumber=generateNumber();
+    if(currentNumber===null){ endGame(false); return; }
     currentNumberEl.textContent=pad(currentNumber);
 
     // EASY MODE osztály hozzáadása
@@ -399,6 +409,7 @@ function placeNumber(e){
         return endGame(true);
 
     currentNumber=generateNumber();
+    if(currentNumber===null){ endGame(false); return; }
     currentNumberEl.textContent=pad(currentNumber);
 }
 
@@ -407,6 +418,7 @@ function skipNumber(){
     skipsLeft--;
     updateSkip();
     currentNumber=generateNumber();
+    if(currentNumber===null){ endGame(false); return; }
     currentNumberEl.textContent=pad(currentNumber);
 }
 
@@ -440,4 +452,3 @@ function goToMenu(){
 
 </body>
 </html>
-
